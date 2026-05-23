@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" },
-    { "source": "/tv", "destination": "/tv.html" },
-    { "source": "/", "destination": "/index.html" }
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" },
+    { "src": "*.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/maestros", "dest": "server.js" },
+    { "src": "/api/sumar-puntos", "dest": "server.js" },
+    { "src": "/tv", "dest": "/tv.html" },
+    { "src": "/", "dest": "/index.html" }
   ]
 }
