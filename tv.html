@@ -3,108 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Líderes Torneo Sika</title>
+    <title>Sika - Tabla de Posiciones</title>
     <style>
-        body { 
-            font-family: 'Arial', sans-serif; 
-            background-color: #1a1a1a; 
-            color: white; 
-            margin: 0; 
-            padding: 20px; 
-            text-align: center;
-        }
-        h1 { 
-            color: #ffcc00; 
-            font-size: 3rem; 
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .subtitle {
-            font-size: 1.5rem;
-            color: #aaa;
-            margin-bottom: 30px;
-        }
-        .tabla-container { 
-            max-width: 900px; 
-            margin: auto; 
-            background: #2d2d2d; 
-            padding: 20px; 
-            border-radius: 15px; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            font-size: 1.8rem;
-        }
-        th, td { 
-            padding: 14px; 
-            text-align: left; 
-            border-bottom: 1px solid #444; 
-        }
-        th { 
-            color: #ffcc00; 
-            text-transform: uppercase;
-            font-size: 1.4rem;
-        }
-        tr:nth-child(even) { background-color: #333; }
-        tr:hover { background-color: #3d3d3d; }
-        .posicion { width: 10%; font-weight: bold; color: #ffcc00; text-align: center; }
-        .nombre { width: 65%; text-transform: uppercase; }
-        .puntos { width: 25%; text-align: right; font-weight: bold; color: #00ff66; }
-        .top3 { color: #ffcc00; font-size: 2.2rem; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #121212; color: #fff; text-align: center; margin: 0; padding: 20px; }
+        h1 { color: #ffcc00; font-size: 2.5rem; text-transform: uppercase; margin-bottom: 5px; }
+        .sub { color: #aaa; font-size: 1.2rem; margin-bottom: 30px; }
+        .tabla-leaderboard { width: 90%; max-width: 800px; margin: auto; border-collapse: collapse; background: #1e1e1e; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        th { background-color: #2a2a2a; color: #ffcc00; padding: 15px; text-transform: uppercase; font-size: 1.1rem; }
+        td { padding: 18px; border-bottom: 1px solid #333; font-size: 1.3rem; font-weight: bold; color: #ffcc00; font-family: 'Segoe UI', Arial, sans-serif; text-transform: uppercase; }
+        .pos { color: #ffcc00; font-size: 1.5rem; }
+        .pts { color: #00ff66; text-align: right; padding-right: 30px; }
+        tr:nth-child(even) { background-color: #252525; }
     </style>
 </head>
 <body>
+    <h1>🏆 TABLA DE POSICIONES - TORNEO SIKA</h1>
+    <div class="sub">Actualización en vivo • Top 20</div>
 
-    <h1>🏆 TABLA DE POSICIONES - TORNEO SIKA 🏆</h1>
-    <div class="subtitle">Actualización en vivo • Top 20</div>
-
-    <div class="tabla-container">
-        <table>
-            <thead>
-                <tr>
-                    <th style="text-align: center;">Pos</th>
-                    <th>Maestro Experto</th>
-                    <th style="text-align: right;">Total Puntos</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-cuerpo">
-                </tbody>
-        </table>
-    </div>
+    <table class="tabla-leaderboard">
+        <thead>
+            <tr>
+                <th style="width: 15%;">POS</th>
+                <th style="text-align: left; padding-left: 20px;">MAESTRO EXPERTO</th>
+                <th style="text-align: right; padding-right: 30px; width: 25%;">TOTAL PUNTOS</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-cuerpo"></tbody>
+    </table>
 
     <script>
         async function actualizarLeaderboard() {
             try {
                 const res = await fetch('/api/maestros');
-                const maestros = await res.json();
-                
-                // Filtramos estrictamente los primeros 20 participantes
-                const top20 = maestros.slice(0, 20);
-                
+                let maestros = await res.json();
+
+                // COPIA DE SEGURIDAD INTERNA:
+                // Si el servidor se reinició a 0 pero tenemos datos guardados en este navegador, se los enviamos para restaurar
+                let localData = localStorage.getItem('respaldo_torneo');
+                if (localData) {
+                    let backup = JSON.parse(localData);
+                    // Si el servidor viene en blanco pero el navegador tiene historial, usamos el del navegador
+                    let servidorVacio = maestros.every(m => m.total === 0) && maestros.length <= 3;
+                    if (servidorVacio && backup.length > maestros.length) {
+                        maestros = backup;
+                        // Sincronizar el servidor con nuestro respaldo
+                        await fetch('/api/sumar-puntos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ restaurarTodo: maestros })
+                        });
+                    }
+                }
+
+                // Guardar siempre el estado más alto actual en el navegador
+                localStorage.setItem('respaldo_torneo', JSON.stringify(maestros));
+
                 const cuerpo = document.getElementById('tabla-cuerpo');
                 cuerpo.innerHTML = '';
 
+                // Mostrar Top 20 ordenado
+                const top20 = [...maestros].sort((a,b) => b.total - a.total).slice(0, 20);
+
                 top20.forEach((m, index) => {
-                    const esTop3 = index < 3 ? 'top3' : '';
                     cuerpo.innerHTML += `
-                        <tr class="${esTop3}">
-                            <td class="posicion">${index + 1}</td>
-                            <td class="nombre">${m.nombre}</td>
-                            <td class="puntos">${m.total.toLocaleString()} pts</td>
+                        <tr>
+                            <td class="pos">${index + 1}</td>
+                            <td style="text-align: left; padding-left: 20px;">${m.nombre}</td>
+                            <td class="pts">${m.total} pts</td>
                         </tr>
                     `;
                 });
             } catch (e) {
-                console.error("Error actualizando pantalla gigante", e);
+                console.error("Error cargando tabla:", e);
             }
         }
 
-        // Ejecutar inmediatamente y programar actualización cada 1 segundo (1000ms)
+        setInterval(actualizarLeaderboard, 2000);
         actualizarLeaderboard();
-        setInterval(actualizarLeaderboard, 1000);
     </script>
 </body>
 </html>
