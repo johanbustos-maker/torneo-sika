@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sika - Registro de Maestros</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center; }
+        .container { max-width: 400px; background: white; padding: 25px; margin: auto; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-top: 5px solid #ffcc00; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        input { border: 1px solid #ccc; text-transform: uppercase; }
+        button { background-color: #000; color: #ffcc00; font-weight: bold; border: none; cursor: pointer; }
+        button:active { background-color: #222; }
+        .mensaje { margin-top: 15px; font-weight: bold; color: green; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Torneo Sika</h2>
+        <h3>Registrar Nuevo Maestro</h3>
+        
+        <input type="text" id="nombre-maestro" placeholder="Nombre completo del maestro" autocomplete="off">
+        <button onclick="registrar()">Guardar en la Base de Datos</button>
+        
+        <div id="status" class="mensaje"></div>
+    </div>
+
+    <script>
+        async function registrar() {
+            const nombreInput = document.getElementById('nombre-maestro');
+            const statusDiv = document.getElementById('status');
+            const nombre = nombreInput.value.trim().toUpperCase();
+
+            if (!nombre) { alert('Por favor, escribe un nombre.'); return; }
+
+            statusDiv.innerText = "Registrando...";
+            
+            const res = await fetch('/api/sumar-puntos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Enviamos una bandera especial para que el servidor entienda que es un registro nuevo
+                body: JSON.stringify({ nuevoMaestro: nombre })
+            });
+
+            if (res.ok) {
+                statusDiv.innerText = `¡${nombre} registrado exitosamente!`;
+                nombreInput.value = "";
+                setTimeout(() => statusDiv.innerText = "", 3000);
+            } else {
+                statusDiv.innerText = "Error al guardar el registro.";
+            }
+        }
+    </script>
+</body>
+</html>
