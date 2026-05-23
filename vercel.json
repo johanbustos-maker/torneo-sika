@@ -7,6 +7,7 @@
   "routes": [
     { "src": "/api/maestros", "dest": "server.js" },
     { "src": "/api/sumar-puntos", "dest": "server.js" },
+    { "src": "/registro", "dest": "/registro.html" },
     { "src": "/tv", "dest": "/tv.html" },
     { "src": "/", "dest": "/index.html" }
   ]
